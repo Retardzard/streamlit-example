@@ -1,38 +1,44 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
 import streamlit as st
-
-"""
-# Welcome to Streamlit!
-
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
-
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+import pickle
+import pandas as pd
+mobile_list= pickle.load(open('movie_dict.pkl','rb'))
+mobiles= pd.DataFrame(mobile_list)
+st.title("Mobile Recommendation System")
 
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
 
-    Point = namedtuple('Point', 'x y')
-    data = []
+similarity=pickle.load(open('similarity.pkl', 'rb'))
+def recommend(mobile):
+    mobile_index = mobiles[mobiles['Name']==mobile].index[0]
+    distances = similarity[mobile_index]
+    mobile_list = sorted(list(enumerate(distances)),reverse=True,key=lambda x:x[1])[1:6]
+    
+    recommended_mobiles_images= []
+    recommended_mobiles = []
+    for i in mobile_list:
+        recommended_mobiles.append(mobiles.iloc[i[0]].Name)
+        recommended_mobiles_images.append(mobiles.iloc[i[0]].Image)
+    return recommended_mobiles,recommended_mobiles_images
 
-    points_per_turn = total_points / num_turns
+selected_mobile_name= st.selectbox(
+'How would you like to be contacted?',
+mobiles['Name'].values)
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+if st.button('Recommend'):
+    names,posters=recommend(selected_mobile_name)
+    col1,col2,col3,col4,col5= st.columns(5)
+    with col1:
+        st.text(names[0])
+        st.image(posters[0])
+    with col2:
+        st.text(names[1])
+        st.image(posters[1])
+    with col3:
+        st.text(names[2])
+        st.image(posters[2])
+    with col4:
+        st.text(names[3])
+        st.image(posters[3])
+    with col5:
+        st.text(names[4])
+        st.image(posters[4])
